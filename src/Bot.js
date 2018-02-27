@@ -140,11 +140,6 @@ module.exports = class Bot {
             default:
                 console.error(`Cannot parse game data input with key ${data[0]}`);
         }
-        // if (data[0] === 'round') {
-        //     this.state.round = parseInt(data[1], 10);
-        // } else if (data[0] === 'field') {
-        //     this.state.field = data[1].split(',');
-        // }
     }
 
     updateChart(data) {
