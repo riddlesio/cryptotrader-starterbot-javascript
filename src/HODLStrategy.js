@@ -13,14 +13,14 @@ module.exports = class HODLStrategy {
 
     execute(gameSettings, state) {
         const dollars = state.stacks['USDT'];
-        const lastClosePrice = state.charts['USDT_BTC'].getCandleAt(state.date).close;
+        const lastClosePrice = state.charts['USDT_ETH'].getCandleAt(state.date).close;
         const amount = dollars / lastClosePrice;
 
         if (amount < 0.01) {
             return 'pass';
         }
 
-        const order = new Order('buy', 'USDT_BTC', amount);
+        const order = new Order('buy', 'USDT_ETH', amount);
 
         return order.toString();
     }
