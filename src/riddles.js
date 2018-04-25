@@ -38,22 +38,22 @@ module.exports = class riddles extends Exchange {
                 createDepositAddress: false,
                 createOrder: true,
                 createMarketOrder: true,
-                createLimitOrder: true,
+                createLimitOrder: false,
                 deposit: false,
                 editOrder: 'emulated',
                 fetchBalance: true,
                 fetchBidsAsks: false,
                 fetchClosedOrders: false,
-                fetchCurrencies: false,
+                fetchCurrencies: true,
                 fetchDepositAddress: false,
                 fetchFundingFees: false,
-                fetchL2OrderBook: true,
+                fetchL2OrderBook: false,
                 fetchMarkets: true,
                 fetchMyTrades: false,
                 fetchOHLCV: true,
                 fetchOpenOrders: false,
                 fetchOrder: false,
-                fetchOrderBook: true,
+                fetchOrderBook: false,
                 fetchOrderBooks: false,
                 fetchOrders: false,
                 fetchTicker: true,
@@ -243,17 +243,6 @@ module.exports = class riddles extends Exchange {
             result[currency] = account;
         }
         return this.parseBalance(result);
-    }
-
-    async fetchOrderBook(symbol, limit = undefined, params = {}) {
-        await this.loadMarkets();
-        let market = this.market(symbol);
-        let request = {
-            symbol: market['id'],
-        };
-        if (typeof limit !== 'undefined') request['limit'] = limit; // default = maximum = 100
-        let orderbook = await this.publicGetDepth(this.extend(request, params));
-        return this.parseOrderBook(orderbook);
     }
 
     parseTicker(ticker, market = undefined) {
