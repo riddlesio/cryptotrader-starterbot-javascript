@@ -3,7 +3,6 @@
 //  ---------------------------------------------------------------------------
 
 const Exchange = require('ccxt/js/base/Exchange');
-const ExchangeDataProxy = require('./ExchangeDataProxy');
 const {
     ExchangeError,
     InsufficientFunds,
@@ -17,11 +16,6 @@ const {
 //  ---------------------------------------------------------------------------
 
 module.exports = class riddles extends Exchange {
-    constructor(userConfig = {}) {
-        super(userConfig);
-        this.dataProxy = new ExchangeDataProxy(this);
-    }
-
     describe() {
         return this.deepExtend(super.describe(), {
             id: 'riddles',
@@ -127,13 +121,16 @@ module.exports = class riddles extends Exchange {
         });
     }
 
+    setDataProxy(dataProxy) {
+        this.dataProxy = dataProxy;
+    }
+
     getDataProxy() {
         return this.dataProxy;
     }
 
     async fetchMarkets() {
-        let response = await this.publicGetExchangeInfo();
-        let markets = response['symbols'];
+        let markets = this.dataProxy.markets;
         let result = [];
         for (let i = 0; i < markets.length; i++) {
             let market = markets[i];
@@ -226,23 +223,65 @@ module.exports = class riddles extends Exchange {
 
     async fetchBalance(params = {}) {
         await this.loadMarkets();
-        let response = await this.privateGetAccount(params);
-        let result = { info: response };
-        let balances = response['balances'];
-        for (let i = 0; i < balances.length; i++) {
-            let balance = balances[i];
-            let currency = balance['asset'];
+        let result = {};
+        let balances = this.dataProxy.stacks;
+        for (var asset in balances) {
+            let currency = asset;
             if (currency in this.currencies_by_id)
                 currency = this.currencies_by_id[currency]['code'];
+            let value = balances[asset];
+            let free = value; // set to stack value for now
+            let locked = 0; // set to 0 for now
             let account = {
-                free: parseFloat(balance['free']),
-                used: parseFloat(balance['locked']),
+                free: parseFloat(free),
+                used: parseFloat(locked),
                 total: 0.0,
             };
             account['total'] = this.sum(account['free'], account['used']);
             result[currency] = account;
         }
         return this.parseBalance(result);
+    }
+
+    async fetchCurrencies(params = {}) {
+        let result = {};
+        let currencies = Object.keys(this.dataProxy.stacks);
+        const precision = 10; // todo: fill in correct precision
+        for (let currency of currencies) {
+            result[currency] = {
+                id: currency,
+                code: currency.toUpperCase(),
+                name: currency,
+                active: true,
+                status: 'ok',
+                precision: precision,
+                funding: {
+                    withdraw: {
+                        active: false,
+                        fee: 100,
+                    },
+                    deposit: {
+                        active: false,
+                        fee: 100,
+                    },
+                },
+                limits: {
+                    amount: {
+                        min: undefined,
+                        max: Math.pow(10, precision),
+                    },
+                    price: {
+                        min: Math.pow(10, -precision),
+                        max: Math.pow(10, precision),
+                    },
+                    cost: {
+                        min: undefined,
+                        max: undefined,
+                    },
+                },
+            };
+        }
+        return result;
     }
 
     parseTicker(ticker, market = undefined) {

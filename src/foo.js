@@ -30,4 +30,7 @@ const ticker = exchange => {
 
     // ohlcv(exchange);
     ticker(exchange);
+
+    const balance = await exchange.fetchBalance();
+    console.log(balance);
 })();
