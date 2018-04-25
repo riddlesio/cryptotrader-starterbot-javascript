@@ -135,21 +135,18 @@ module.exports = class riddles extends Exchange {
         for (let i = 0; i < markets.length; i++) {
             let market = markets[i];
             let id = market['symbol'];
-            // "123456" is a "test symbol/market"
-            if (id === '123456') continue;
             let baseId = market['baseAsset'];
             let quoteId = market['quoteAsset'];
             let base = this.commonCurrencyCode(baseId);
             let quote = this.commonCurrencyCode(quoteId);
             let symbol = base + '/' + quote;
-            let filters = this.indexBy(market['filters'], 'filterType');
+            let fixedPrecision = 10; // todo: find out game engine precision
             let precision = {
-                base: market['baseAssetPrecision'],
-                quote: market['quotePrecision'],
-                amount: market['baseAssetPrecision'],
-                price: market['quotePrecision'],
+                base: fixedPrecision,
+                quote: fixedPrecision,
+                amount: fixedPrecision,
+                price: fixedPrecision,
             };
-            let active = market['status'] === 'TRADING';
             // lot size is deprecated as of 2018.02.06
             let lot = -1 * Math.log10(precision['amount']);
             let entry = {
@@ -161,7 +158,7 @@ module.exports = class riddles extends Exchange {
                 quoteId: quoteId,
                 info: market,
                 lot: lot, // lot size is deprecated as of 2018.02.06
-                active: active,
+                active: true,
                 precision: precision,
                 limits: {
                     amount: {
@@ -178,26 +175,6 @@ module.exports = class riddles extends Exchange {
                     },
                 },
             };
-            if ('PRICE_FILTER' in filters) {
-                let filter = filters['PRICE_FILTER'];
-                entry['precision']['price'] = this.precisionFromString(filter['tickSize']);
-                entry['limits']['price'] = {
-                    min: parseFloat(filter['minPrice']),
-                    max: parseFloat(filter['maxPrice']),
-                };
-            }
-            if ('LOT_SIZE' in filters) {
-                let filter = filters['LOT_SIZE'];
-                entry['precision']['amount'] = this.precisionFromString(filter['stepSize']);
-                entry['lot'] = parseFloat(filter['stepSize']); // lot size is deprecated as of 2018.02.06
-                entry['limits']['amount'] = {
-                    min: parseFloat(filter['minQty']),
-                    max: parseFloat(filter['maxQty']),
-                };
-            }
-            if ('MIN_NOTIONAL' in filters) {
-                entry['limits']['cost']['min'] = parseFloat(filters['MIN_NOTIONAL']['minNotional']);
-            }
             result.push(entry);
         }
         return result;
@@ -527,14 +504,14 @@ module.exports = class riddles extends Exchange {
         if (body.indexOf('LOT_SIZE') >= 0)
             throw new InvalidOrder(
                 this.id +
-                    ' order amount should be evenly divisible by lot size, use this.amountToLots (symbol, amount) ' +
-                    body
+                ' order amount should be evenly divisible by lot size, use this.amountToLots (symbol, amount) ' +
+                body
             );
         if (body.indexOf('PRICE_FILTER') >= 0)
             throw new InvalidOrder(
                 this.id +
-                    ' order price exceeds allowed price precision or invalid, use this.priceToPrecision (symbol, amount) ' +
-                    body
+                ' order price exceeds allowed price precision or invalid, use this.priceToPrecision (symbol, amount) ' +
+                body
             );
         if (body.indexOf('Order does not exist') >= 0)
             throw new OrderNotFound(this.id + ' ' + body);
