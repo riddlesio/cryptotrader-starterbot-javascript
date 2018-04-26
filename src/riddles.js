@@ -408,12 +408,9 @@ module.exports = class riddles extends Exchange {
             side: side.toUpperCase(),
         };
         if (type === 'limit') {
-            order = this.extend(order, {
-                price: this.priceToPrecision(symbol, price),
-                timeInForce: 'GTC', // 'GTC' = Good To Cancel (default), 'IOC' = Immediate Or Cancel
-            });
+            throw new NotSupported('limit orders are not supported');
         }
-        let response = await this.privatePostOrder(this.extend(order, params));
+        let response = this.dataProxy.addOrder(order);
         return this.parseOrder(response);
     }
 
