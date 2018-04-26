@@ -130,3 +130,13 @@ test('fetchTickers', async () => {
     // use case 3: get tickers whose symbols are substrings of the input string
     await exchange.fetchTickers('foo BTC/ETH bar USDT/ETH').then(keyCountEquals(2));
 });
+
+test('fetchOHLCV', async () => {
+    const exchange = getExchange();
+
+    await exchange.fetchOHLCV('BTC/ETH').then(data => {
+        expect(data).toEqual([
+            [1516753800000, 0.09060023, 0.090995, 0.09040017, 0.09069601, 39.15071531],
+        ]);
+    });
+});

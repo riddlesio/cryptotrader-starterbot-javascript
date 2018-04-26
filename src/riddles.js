@@ -297,28 +297,11 @@ module.exports = class riddles extends Exchange {
         return this.parseTicker(ticker, market);
     }
 
-    parseTickers(rawTickers, symbols = undefined) {
-        let tickers = [];
-        for (let i = 0; i < rawTickers.length; i++) {
-            tickers.push(this.parseTicker(rawTickers[i]));
-        }
-        let tickersBySymbol = this.indexBy(tickers, 'symbol');
-        // return all of them if no symbols were passed in the first argument
-        if (typeof symbols === 'undefined') return tickersBySymbol;
-        // otherwise filter by symbol
-        let result = {};
-        for (let i = 0; i < symbols.length; i++) {
-            let symbol = symbols[i];
-            if (symbol in tickersBySymbol) result[symbol] = tickersBySymbol[symbol];
-        }
-        return result;
-    }
-
     async fetchTickers(symbols = undefined, params = {}) {
         await this.loadMarkets();
         const tickers = [];
         for (const marketId in this.dataProxy.candles) {
-            let market = this.marketsById[marketId]
+            let market = this.marketsById[marketId];
             let dataSource = this.dataProxy.candles[marketId];
             tickers.push(this.parseTicker(dataSource[dataSource.length - 1], market));
         }
@@ -326,28 +309,25 @@ module.exports = class riddles extends Exchange {
         return this.filterByArray(tickers, 'symbol', symbols);
     }
 
-    parseOHLCV(ohlcv, market = undefined, timeframe = '1m', since = undefined, limit = undefined) {
+    parseOHLCV(ohlcv, market = undefined, timeframe = '30m', since = undefined, limit = undefined) {
         return [
-            ohlcv[0],
-            parseFloat(ohlcv[1]),
-            parseFloat(ohlcv[2]),
-            parseFloat(ohlcv[3]),
-            parseFloat(ohlcv[4]),
-            parseFloat(ohlcv[5]),
+            ohlcv['date'] * 1000,
+            parseFloat(ohlcv['open']),
+            parseFloat(ohlcv['high']),
+            parseFloat(ohlcv['low']),
+            parseFloat(ohlcv['close']),
+            parseFloat(ohlcv['volume']),
         ];
     }
 
-    async fetchOHLCV(symbol, timeframe = '1m', since = undefined, limit = 500, params = {}) {
+    async fetchOHLCV(symbol, timeframe = '30m', since = undefined, limit = 500, params = {}) {
         await this.loadMarkets();
         let market = this.market(symbol);
-        let request = {
-            symbol: market['id'],
-            interval: this.timeframes[timeframe],
-            limit: limit, // default == max == 500
-        };
-        if (typeof since !== 'undefined') request['startTime'] = since;
-        let response = await this.publicGetKlines(this.extend(request, params));
-        return this.parseOHLCVs(response, market, timeframe, since, limit);
+        // this.timeframes[timeframe],
+        // if (typeof since !== 'undefined') request['startTime'] = since;
+        // todo filter based on since
+        let candles = this.dataProxy.candles[market.id].slice(-limit);
+        return this.parseOHLCVs(candles, market, timeframe, since, limit);
     }
 
     parseTrade(trade, market = undefined) {
@@ -497,14 +477,14 @@ module.exports = class riddles extends Exchange {
         if (body.indexOf('LOT_SIZE') >= 0)
             throw new InvalidOrder(
                 this.id +
-                ' order amount should be evenly divisible by lot size, use this.amountToLots (symbol, amount) ' +
-                body
+                    ' order amount should be evenly divisible by lot size, use this.amountToLots (symbol, amount) ' +
+                    body
             );
         if (body.indexOf('PRICE_FILTER') >= 0)
             throw new InvalidOrder(
                 this.id +
-                ' order price exceeds allowed price precision or invalid, use this.priceToPrecision (symbol, amount) ' +
-                body
+                    ' order price exceeds allowed price precision or invalid, use this.priceToPrecision (symbol, amount) ' +
+                    body
             );
         if (body.indexOf('Order does not exist') >= 0)
             throw new OrderNotFound(this.id + ' ' + body);
