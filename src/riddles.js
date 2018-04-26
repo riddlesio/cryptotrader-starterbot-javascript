@@ -18,7 +18,7 @@ module.exports = class riddles extends Exchange {
             id: 'riddles',
             name: 'Riddles.io',
             countries: 'NL', // Netherlands
-            rateLimit: 500,
+            rateLimit: 0,
             // new metainfo interface
             has: {
                 CORS: false,
@@ -60,35 +60,6 @@ module.exports = class riddles extends Exchange {
                 api: 'https://docs.riddles.io/crypto-trader/api',
                 www: 'https://playground.riddles.io/competitions/crypto-trader',
                 doc: 'https://docs.riddles.io/crypto-trader/rules',
-            },
-            api: {
-                web: {
-                    get: ['exchange/public/product'],
-                },
-                public: {
-                    get: [
-                        'exchangeInfo',
-                        'ping',
-                        'time',
-                        'depth',
-                        'aggTrades',
-                        'klines',
-                        'ticker/24hr',
-                        'ticker/allPrices',
-                        'ticker/allBookTickers',
-                        'ticker/price',
-                        'ticker/bookTicker',
-                        'exchangeInfo',
-                    ],
-                    put: ['userDataStream'],
-                    post: ['userDataStream'],
-                    delete: ['userDataStream'],
-                },
-                private: {
-                    get: ['order', 'openOrders', 'allOrders', 'account', 'myTrades'],
-                    post: ['order', 'order/test'],
-                    delete: ['order'],
-                },
             },
             fees: {
                 trading: {
