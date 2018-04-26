@@ -10,27 +10,26 @@ const ohlcv = exchange => {
     let since = date.getTime();
     console.log(since);
     exchange.fetchOHLCV('ETH/BTC', '5m', since).then(res => {
-        for (let ohlcv of res) {
-            let date = new Date(ohlcv.shift());
-            const [open, high, low, close, volume] = ohlcv;
-            console.log({ date, open, high, low, close, volume });
-        }
-        console.log(res.length);
-    });
-};
-
-const ticker = exchange => {
-    exchange.fetchTicker('ETH/BTC').then(res => {
         console.log(res);
+        // for (let ohlcv of res) {
+        //     let date = new Date(ohlcv.shift());
+        //     const [open, high, low, close, volume] = ohlcv;
+        //     console.log({ date, open, high, low, close, volume });
+        // }
+        // console.log(res.length);
     });
 };
 
 (async () => {
     await exchange.loadMarkets();
 
-    // ohlcv(exchange);
-    ticker(exchange);
+    ohlcv(exchange);
 
-    const balance = await exchange.fetchBalance();
-    console.log(balance);
+    // exchange.fetchTicker('ETH/BTC').then(res => {
+    //     delete res.info;
+    //     console.log(res);
+    // });
+
+    // const balance = await exchange.fetchBalance();
+    // console.log(balance);
 })();
