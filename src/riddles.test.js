@@ -1,3 +1,5 @@
+const { ExchangeError } = require('ccxt');
+
 const ccxt = require('./ccxt');
 
 function getDataProxyMock() {
@@ -168,4 +170,16 @@ test('fetchOHLCV since date', async () => {
     await exchange.fetchOHLCV('BTC/ETH', '30m', 1516753800000).then(data => {
         expect(data).toHaveLength(1);
     });
+});
+
+test('fetchOHLCV throws error for wrong timeframe', async () => {
+    const exchange = getExchange();
+    const expectExchangeError = err => {
+        expect(err).toBeInstanceOf(ExchangeError);
+    };
+    expect.assertions(4);
+    exchange.fetchOHLCV('BTC/ETH', '1m', 1516753800000).catch(expectExchangeError);
+    exchange.fetchOHLCV('BTC/ETH', '3m', 1516753800000).catch(expectExchangeError);
+    exchange.fetchOHLCV('BTC/ETH', '5m', 1516753800000).catch(expectExchangeError);
+    exchange.fetchOHLCV('BTC/ETH', '15m', 1516753800000).catch(expectExchangeError);
 });

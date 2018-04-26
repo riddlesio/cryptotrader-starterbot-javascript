@@ -8,9 +8,6 @@ const {
     InsufficientFunds,
     OrderNotFound,
     InvalidOrder,
-    DDoSProtection,
-    InvalidNonce,
-    AuthenticationError,
 } = require('ccxt/js/base/errors');
 
 //  ---------------------------------------------------------------------------
@@ -110,14 +107,7 @@ module.exports = class riddles extends Exchange {
                 warnOnFetchOpenOrdersWithoutSymbol: true,
                 recvWindow: 5 * 1000, // 5 sec, binance default
             },
-            exceptions: {
-                '-1013': InvalidOrder, // createOrder -> 'invalid quantity'/'invalid price'/MIN_NOTIONAL
-                '-1021': InvalidNonce, // 'your time is ahead of server'
-                '-1100': InvalidOrder, // createOrder(symbol, 1, asdf) -> 'Illegal characters found in parameter 'price'
-                '-2010': InsufficientFunds, // createOrder -> 'Account has insufficient balance for requested action.'
-                '-2011': OrderNotFound, // cancelOrder(1, 'BTC/USDT') -> 'UNKNOWN_ORDER'
-                '-2015': AuthenticationError, // "Invalid API-key, IP, or permissions for action."
-            },
+            exceptions: {},
         });
     }
 
@@ -323,8 +313,10 @@ module.exports = class riddles extends Exchange {
     async fetchOHLCV(symbol, timeframe = '30m', since = undefined, limit = 500, params = {}) {
         await this.loadMarkets();
         let market = this.market(symbol);
-        // todo: throw error for unsupported timeframe
-        // this.timeframes[timeframe],
+        if (!(timeframe in this.timeframes)) {
+            const validFrames = Object.keys(this.timeframes).join(',');
+            throw new ExchangeError(`invalid timeframe, only ${validFrames} is supported`);
+        }
         let candles = this.dataProxy.candles[market.id];
         if (typeof since !== 'undefined') {
             candles = candles.filter(unparsed_ohlcv => unparsed_ohlcv.date >= since);
@@ -458,56 +450,10 @@ module.exports = class riddles extends Exchange {
     }
 
     handleErrors(code, reason, url, method, headers, body) {
-        // in case of error binance sets http status code >= 400
-        if (code < 300)
-            // status code ok, proceed with request
-            return;
-        if (code < 400)
-            // should not normally happen, reserve for redirects in case
-            // we'll want to scrape some info from web pages
-            return;
-        // code >= 400
-        if (code === 418 || code === 429)
-            throw new DDoSProtection(this.id + ' ' + code.toString() + ' ' + reason + ' ' + body);
-        // error response in a form: { "code": -1013, "msg": "Invalid quantity." }
-        // following block cointains legacy checks against message patterns in "msg" property
-        // will switch "code" checks eventually, when we know all of them
-        if (body.indexOf('Price * QTY is zero or less') >= 0)
-            throw new InvalidOrder(
-                this.id + ' order cost = amount * price is zero or less ' + body
-            );
-        if (body.indexOf('LOT_SIZE') >= 0)
-            throw new InvalidOrder(
-                this.id +
-                    ' order amount should be evenly divisible by lot size, use this.amountToLots (symbol, amount) ' +
-                    body
-            );
-        if (body.indexOf('PRICE_FILTER') >= 0)
-            throw new InvalidOrder(
-                this.id +
-                    ' order price exceeds allowed price precision or invalid, use this.priceToPrecision (symbol, amount) ' +
-                    body
-            );
-        if (body.indexOf('Order does not exist') >= 0)
-            throw new OrderNotFound(this.id + ' ' + body);
-        // checks against error codes
-        if (typeof body === 'string') {
-            if (body.length > 0) {
-                if (body[0] === '{') {
-                    let response = JSON.parse(body);
-                    let error = this.safeString(response, 'code');
-                    if (typeof error !== 'undefined') {
-                        const exceptions = this.exceptions;
-                        if (error in exceptions) {
-                            throw new exceptions[error](this.id + ' ' + this.json(response));
-                        } else {
-                            throw new ExchangeError(
-                                this.id + ': unknown error code: ' + this.json(response)
-                            );
-                        }
-                    }
-                }
-            }
-        }
+        throw new ExchangeError(
+            this.id +
+                ': unknown error code: ' +
+                this.json({ code, reason, url, method, headers, body })
+        );
     }
 };
