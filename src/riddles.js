@@ -262,7 +262,7 @@ module.exports = class riddles extends Exchange {
     }
 
     parseTicker(ticker, market = undefined) {
-        let timestamp = this.safeInteger(ticker, 'date') * 1000;
+        let timestamp = this.safeInteger(ticker, 'date');
         let iso8601 = typeof timestamp === 'undefined' ? undefined : this.iso8601(timestamp);
         let symbol = this.findSymbol(this.safeString(ticker, 'symbol'), market);
         return {
@@ -311,7 +311,7 @@ module.exports = class riddles extends Exchange {
 
     parseOHLCV(ohlcv, market = undefined, timeframe = '30m', since = undefined, limit = undefined) {
         return [
-            ohlcv['date'] * 1000,
+            ohlcv['date'],
             parseFloat(ohlcv['open']),
             parseFloat(ohlcv['high']),
             parseFloat(ohlcv['low']),
@@ -327,7 +327,7 @@ module.exports = class riddles extends Exchange {
         // this.timeframes[timeframe],
         let candles = this.dataProxy.candles[market.id];
         if (typeof since !== 'undefined') {
-            candles = candles.filter(unparsed_ohlcv => unparsed_ohlcv.date * 1000 >= since);
+            candles = candles.filter(unparsed_ohlcv => unparsed_ohlcv.date >= since);
         }
         return this.parseOHLCVs(candles, market, timeframe, since, limit);
     }

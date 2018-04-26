@@ -15,7 +15,7 @@ function getDataProxyMock() {
     mock.candles = {
         BTC_ETH: [
             {
-                date: 1516752000,
+                date: 1516752000000,
                 high: 0.09106666,
                 low: 0.0903014,
                 open: 0.09099898,
@@ -23,7 +23,7 @@ function getDataProxyMock() {
                 volume: 41.29626163,
             },
             {
-                date: 1516753800,
+                date: 1516753800000,
                 high: 0.090995,
                 low: 0.09040017,
                 open: 0.09060023,
@@ -33,7 +33,7 @@ function getDataProxyMock() {
         ],
         USDT_ETH: [
             {
-                date: 1516753800,
+                date: 1516753800000,
                 high: 976.99644142,
                 low: 955.99999998,
                 open: 974.87665079,
@@ -43,7 +43,7 @@ function getDataProxyMock() {
         ],
         USDT_BTC: [
             {
-                date: 1516753800,
+                date: 1516753800000,
                 high: 10806.92999962,
                 low: 10501,
                 open: 10748.4213653,
