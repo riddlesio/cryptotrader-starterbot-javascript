@@ -262,30 +262,29 @@ module.exports = class riddles extends Exchange {
     }
 
     parseTicker(ticker, market = undefined) {
-        let timestamp = this.safeInteger(ticker, 'closeTime');
+        let timestamp = this.safeInteger(ticker, 'date') * 1000;
         let iso8601 = typeof timestamp === 'undefined' ? undefined : this.iso8601(timestamp);
         let symbol = this.findSymbol(this.safeString(ticker, 'symbol'), market);
-        let last = this.safeFloat(ticker, 'lastPrice');
         return {
             symbol: symbol,
             timestamp: timestamp,
             datetime: iso8601,
-            high: this.safeFloat(ticker, 'highPrice'),
-            low: this.safeFloat(ticker, 'lowPrice'),
-            bid: this.safeFloat(ticker, 'bidPrice'),
-            bidVolume: this.safeFloat(ticker, 'bidQty'),
-            ask: this.safeFloat(ticker, 'askPrice'),
-            askVolume: this.safeFloat(ticker, 'askQty'),
-            vwap: this.safeFloat(ticker, 'weightedAvgPrice'),
-            open: this.safeFloat(ticker, 'openPrice'),
-            close: last,
-            last: last,
-            previousClose: this.safeFloat(ticker, 'prevClosePrice'), // previous day close
-            change: this.safeFloat(ticker, 'priceChange'),
-            percentage: this.safeFloat(ticker, 'priceChangePercent'),
+            high: this.safeFloat(ticker, 'high'),
+            low: this.safeFloat(ticker, 'low'),
+            bid: undefined,
+            bidVolume: undefined,
+            ask: undefined,
+            askVolume: undefined,
+            vwap: undefined,
+            open: this.safeFloat(ticker, 'open'),
+            close: this.safeFloat(ticker, 'close'),
+            last: this.safeFloat(ticker, 'close'),
+            previousClose: undefined,
+            change: undefined,
+            percentage: undefined,
             average: undefined,
             baseVolume: this.safeFloat(ticker, 'volume'),
-            quoteVolume: this.safeFloat(ticker, 'quoteVolume'),
+            quoteVolume: undefined,
             info: ticker,
         };
     }
@@ -293,15 +292,9 @@ module.exports = class riddles extends Exchange {
     async fetchTicker(symbol, params = {}) {
         await this.loadMarkets();
         let market = this.market(symbol);
-        let response = await this.publicGetTicker24hr(
-            this.extend(
-                {
-                    symbol: market['id'],
-                },
-                params
-            )
-        );
-        return this.parseTicker(response, market);
+        let dataSource = this.dataProxy.candles[market['id']];
+        var ticker = dataSource[dataSource.length - 1];
+        return this.parseTicker(ticker, market);
     }
 
     parseTickers(rawTickers, symbols = undefined) {
@@ -321,16 +314,16 @@ module.exports = class riddles extends Exchange {
         return result;
     }
 
-    async fetchBidAsks(symbols = undefined, params = {}) {
-        await this.loadMarkets();
-        let rawTickers = await this.publicGetTickerBookTicker(params);
-        return this.parseTickers(rawTickers, symbols);
-    }
-
     async fetchTickers(symbols = undefined, params = {}) {
         await this.loadMarkets();
-        let rawTickers = await this.publicGetTicker24hr(params);
-        return this.parseTickers(rawTickers, symbols);
+        const tickers = [];
+        for (const marketId in this.dataProxy.candles) {
+            let market = this.marketsById[marketId]
+            let dataSource = this.dataProxy.candles[marketId];
+            tickers.push(this.parseTicker(dataSource[dataSource.length - 1], market));
+        }
+        if (typeof symbols === 'undefined') return tickers;
+        return this.filterByArray(tickers, 'symbol', symbols);
     }
 
     parseOHLCV(ohlcv, market = undefined, timeframe = '1m', since = undefined, limit = undefined) {
