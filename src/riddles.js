@@ -445,10 +445,6 @@ module.exports = class riddles extends Exchange {
         return this.parseOrder(response);
     }
 
-    commonCurrencyCode(currency) {
-        return currency;
-    }
-
     handleErrors(code, reason, url, method, headers, body) {
         throw new ExchangeError(
             this.id +
