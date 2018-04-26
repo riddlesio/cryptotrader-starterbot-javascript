@@ -323,10 +323,12 @@ module.exports = class riddles extends Exchange {
     async fetchOHLCV(symbol, timeframe = '30m', since = undefined, limit = 500, params = {}) {
         await this.loadMarkets();
         let market = this.market(symbol);
+        // todo: throw error for unsupported timeframe
         // this.timeframes[timeframe],
-        // if (typeof since !== 'undefined') request['startTime'] = since;
-        // todo filter based on since
-        let candles = this.dataProxy.candles[market.id].slice(-limit);
+        let candles = this.dataProxy.candles[market.id];
+        if (typeof since !== 'undefined') {
+            candles = candles.filter(unparsed_ohlcv => unparsed_ohlcv.date * 1000 >= since);
+        }
         return this.parseOHLCVs(candles, market, timeframe, since, limit);
     }
 

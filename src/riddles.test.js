@@ -15,6 +15,14 @@ function getDataProxyMock() {
     mock.candles = {
         BTC_ETH: [
             {
+                date: 1516752000,
+                high: 0.09106666,
+                low: 0.0903014,
+                open: 0.09099898,
+                close: 0.09060045,
+                volume: 41.29626163,
+            },
+            {
                 date: 1516753800,
                 high: 0.090995,
                 low: 0.09040017,
@@ -53,7 +61,7 @@ function getExchange(proxy) {
     return exchange;
 }
 
-test('fetchBalances', async () => {
+test('fetchBalances returns the correct balance', async () => {
     const exchange = getExchange();
     return expect(exchange.fetchBalance()).resolves.toEqual({
         BTC: {
@@ -72,9 +80,9 @@ test('fetchBalances', async () => {
     });
 });
 
-test('calculateFee', async () => {
+test('calculateFee calculates the correct fee rate and cost', async () => {
     const exchange = getExchange();
-    let markets = await exchange.loadMarkets();
+    await exchange.loadMarkets();
     // console.log(markets);
     let result = exchange.calculateFee('BTC/ETH', null, 'buy', 1, 10);
     expect(result.currency).toEqual('BTC');
@@ -92,7 +100,7 @@ test('calculateFee', async () => {
     expect(result3.cost).toEqual(0.04);
 });
 
-test('fetchTicker', () => {
+test('fetchTicker returns single ticker', () => {
     const exchange = getExchange();
     return exchange.fetchTicker('BTC/ETH').then(data => {
         const map = {
@@ -109,7 +117,7 @@ test('fetchTicker', () => {
     });
 });
 
-test('fetchTickers', async () => {
+test('fetchTickers returns one or more tickers', async () => {
     const exchange = getExchange();
 
     const keyCountEquals = expectedKeyCount => object => {
@@ -131,12 +139,33 @@ test('fetchTickers', async () => {
     await exchange.fetchTickers('foo BTC/ETH bar USDT/ETH').then(keyCountEquals(2));
 });
 
-test('fetchOHLCV', async () => {
+test('fetchOHLCV returns candles', async () => {
     const exchange = getExchange();
 
     await exchange.fetchOHLCV('BTC/ETH').then(data => {
         expect(data).toEqual([
+            [1516752000000, 0.09099898, 0.09106666, 0.0903014, 0.09060045, 41.29626163],
             [1516753800000, 0.09060023, 0.090995, 0.09040017, 0.09069601, 39.15071531],
         ]);
+    });
+});
+
+test('fetchOHLCV can be limited', async () => {
+    const exchange = getExchange();
+
+    await exchange.fetchOHLCV('BTC/ETH').then(data => {
+        expect(data).toHaveLength(2);
+    });
+
+    await exchange.fetchOHLCV('BTC/ETH', '30m', undefined, 1).then(data => {
+        expect(data).toHaveLength(1);
+    });
+});
+
+test('fetchOHLCV since date', async () => {
+    const exchange = getExchange();
+
+    await exchange.fetchOHLCV('BTC/ETH', '30m', 1516753800000).then(data => {
+        expect(data).toHaveLength(1);
     });
 });
