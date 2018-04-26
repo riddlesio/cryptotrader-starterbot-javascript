@@ -1,4 +1,4 @@
-const { ExchangeError } = require('ccxt');
+const { NotSupported } = require('ccxt');
 
 const ccxt = require('./ccxt');
 
@@ -175,7 +175,7 @@ test('fetchOHLCV since date', async () => {
 test('fetchOHLCV throws error for wrong timeframe', async () => {
     const exchange = getExchange();
     const expectExchangeError = err => {
-        expect(err).toBeInstanceOf(ExchangeError);
+        expect(err).toBeInstanceOf(NotSupported);
     };
     expect.assertions(4);
     exchange.fetchOHLCV('BTC/ETH', '1m', 1516753800000).catch(expectExchangeError);

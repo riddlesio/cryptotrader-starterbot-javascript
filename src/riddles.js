@@ -8,6 +8,7 @@ const {
     InsufficientFunds,
     OrderNotFound,
     InvalidOrder,
+    NotSupported,
 } = require('ccxt/js/base/errors');
 
 //  ---------------------------------------------------------------------------
@@ -286,7 +287,7 @@ module.exports = class riddles extends Exchange {
         let market = this.market(symbol);
         if (!(timeframe in this.timeframes)) {
             const validFrames = Object.keys(this.timeframes).join(',');
-            throw new ExchangeError(`invalid timeframe, only ${validFrames} is supported`);
+            throw new NotSupported(`invalid timeframe, only ${validFrames} is supported`);
         }
         let candles = this.dataProxy.candles[market.id];
         if (typeof since !== 'undefined') {
