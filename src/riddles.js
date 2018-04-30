@@ -92,7 +92,7 @@ module.exports = class riddles extends Exchange {
     }
 
     async fetchMarkets() {
-        let markets = this.dataProxy.markets;
+        let markets = this.dataProxy.getMarkets();
         let result = [];
         for (let i = 0; i < markets.length; i++) {
             let market = markets[i];
@@ -163,7 +163,7 @@ module.exports = class riddles extends Exchange {
     async fetchBalance(params = {}) {
         await this.loadMarkets();
         let result = {};
-        let balances = this.dataProxy.stacks;
+        let balances = this.dataProxy.getStacks();
         for (var asset in balances) {
             let currency = asset;
             if (currency in this.currencies_by_id)
@@ -184,7 +184,7 @@ module.exports = class riddles extends Exchange {
 
     async fetchCurrencies(params = {}) {
         let result = {};
-        let currencies = Object.keys(this.dataProxy.stacks);
+        let currencies = Object.keys(this.dataProxy.getStacks());
         const precision = 10; // todo: fill in correct precision
         for (let currency of currencies) {
             result[currency] = {
@@ -254,7 +254,7 @@ module.exports = class riddles extends Exchange {
     async fetchTicker(symbol, params = {}) {
         await this.loadMarkets();
         let market = this.market(symbol);
-        let dataSource = this.dataProxy.candles[market['id']];
+        let dataSource = this.dataProxy.getCandles()[market['id']];
         var ticker = dataSource[dataSource.length - 1];
         return this.parseTicker(ticker, market);
     }
@@ -262,9 +262,10 @@ module.exports = class riddles extends Exchange {
     async fetchTickers(symbols = undefined, params = {}) {
         await this.loadMarkets();
         const tickers = [];
-        for (const marketId in this.dataProxy.candles) {
+        const candles = this.dataProxy.getCandles();
+        for (const marketId in candles) {
             let market = this.marketsById[marketId];
-            let dataSource = this.dataProxy.candles[marketId];
+            let dataSource = candles[marketId];
             tickers.push(this.parseTicker(dataSource[dataSource.length - 1], market));
         }
         if (typeof symbols === 'undefined') return tickers;
@@ -289,7 +290,7 @@ module.exports = class riddles extends Exchange {
             const validFrames = Object.keys(this.timeframes).join(',');
             throw new NotSupported(`invalid timeframe, only ${validFrames} is supported`);
         }
-        let candles = this.dataProxy.candles[market.id];
+        let candles = this.dataProxy.getCandles()[market.id];
         if (typeof since !== 'undefined') {
             candles = candles.filter(unparsed_ohlcv => unparsed_ohlcv.date >= since);
         }

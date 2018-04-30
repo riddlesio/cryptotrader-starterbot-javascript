@@ -10,6 +10,10 @@ module.exports = class ExchangeDataProxy {
         this.stacks = stacks;
     }
 
+    getStacks() {
+        return this.stacks;
+    }
+
     addMarket(marketId) {
         const [base, quote] = marketId.split('_');
         const market = {
@@ -20,8 +24,16 @@ module.exports = class ExchangeDataProxy {
         this.markets.push(market);
     }
 
+    getMarkets() {
+        return this.markets;
+    }
+
     addCandle(candle) {
         this.candles.push(candle);
+    }
+
+    getCandles() {
+        return this.candles;
     }
 
     addOrder(order) {

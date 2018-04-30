@@ -1,65 +1,12 @@
 const { NotSupported } = require('ccxt');
 
 const ccxt = require('./ccxt');
+const ExchangeDataProxy = require('./ExchangeDataProxy');
+jest.mock('./ExchangeDataProxy');
 
-function getDataProxyMock() {
-    const mock = jest.fn();
-    mock.stacks = { BTC: 100, ETH: 10 };
-    mock.markets = [
-        {
-            symbol: 'BTC_ETH',
-            baseAsset: 'BTC',
-            quoteAsset: 'ETH',
-        },
-        { symbol: 'USDT_ETH', baseAsset: 'USDT', quoteAsset: 'ETH', filters: {} },
-        { symbol: 'USDT_BTC', baseAsset: 'USDT', quoteAsset: 'BTC', filters: {} },
-    ];
-    mock.candles = {
-        BTC_ETH: [
-            {
-                date: 1516752000000,
-                high: 0.09106666,
-                low: 0.0903014,
-                open: 0.09099898,
-                close: 0.09060045,
-                volume: 41.29626163,
-            },
-            {
-                date: 1516753800000,
-                high: 0.090995,
-                low: 0.09040017,
-                open: 0.09060023,
-                close: 0.09069601,
-                volume: 39.15071531,
-            },
-        ],
-        USDT_ETH: [
-            {
-                date: 1516753800000,
-                high: 976.99644142,
-                low: 955.99999998,
-                open: 974.87665079,
-                close: 960.00160798,
-                volume: 316622.92602686,
-            },
-        ],
-        USDT_BTC: [
-            {
-                date: 1516753800000,
-                high: 10806.92999962,
-                low: 10501,
-                open: 10748.4213653,
-                close: 10575.00000019,
-                volume: 1618333.6451304,
-            },
-        ],
-    };
-    return mock;
-}
-
-function getExchange(proxy) {
+function getExchange() {
     const exchange = new ccxt.riddles();
-    exchange.setDataProxy(proxy || getDataProxyMock());
+    exchange.setDataProxy(ExchangeDataProxy());
     return exchange;
 }
 
@@ -183,3 +130,10 @@ test('fetchOHLCV throws error for wrong timeframe', async () => {
     exchange.fetchOHLCV('BTC/ETH', '5m', 1516753800000).catch(expectExchangeError);
     exchange.fetchOHLCV('BTC/ETH', '15m', 1516753800000).catch(expectExchangeError);
 });
+
+// describe('createOrder', () => {
+//     test('should return an order', async () => {
+//         const exchange = getExchange();
+//         const order = await exchange.createOrder('BTC/ETH', 'market', 'buy', 1, 10);
+//     });
+// });
