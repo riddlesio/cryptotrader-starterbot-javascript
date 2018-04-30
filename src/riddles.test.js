@@ -113,8 +113,8 @@ test('fetchTicker returns single ticker', () => {
             last: 0.09069601,
             baseVolume: 39.15071531,
         };
-        for (key in map) {
-            expect(data.key).toEqual(map.key);
+        for (let key in Object.keys(map)) {
+            expect(data[key]).toEqual(map[key]);
         }
     });
 });
@@ -123,7 +123,7 @@ test('fetchTickers returns one or more tickers', async () => {
     const exchange = getExchange();
 
     const keyCountEquals = expectedKeyCount => object => {
-        expect(Object.keys(object).length).toEqual(expectedKeyCount);
+        expect(Object.keys(object)).toHaveLength(expectedKeyCount);
         return object;
     };
 
