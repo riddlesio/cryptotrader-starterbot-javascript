@@ -1,4 +1,4 @@
-const { NotSupported } = require('ccxt');
+const { NotSupported, InsufficientFunds } = require('ccxt');
 
 const ccxt = require('./ccxt');
 const ExchangeDataProxy = require('./ExchangeDataProxy');
@@ -9,6 +9,10 @@ function getExchange() {
     exchange.setDataProxy(ExchangeDataProxy());
     return exchange;
 }
+
+const expectExchangeError = errorType => err => {
+    expect(err).toBeInstanceOf(errorType);
+};
 
 test('fetchBalances returns the correct balance', async () => {
     const exchange = getExchange();
@@ -121,19 +125,51 @@ test('fetchOHLCV since date', async () => {
 
 test('fetchOHLCV throws error for wrong timeframe', async () => {
     const exchange = getExchange();
-    const expectExchangeError = err => {
-        expect(err).toBeInstanceOf(NotSupported);
-    };
     expect.assertions(4);
-    exchange.fetchOHLCV('BTC/ETH', '1m', 1516753800000).catch(expectExchangeError);
-    exchange.fetchOHLCV('BTC/ETH', '3m', 1516753800000).catch(expectExchangeError);
-    exchange.fetchOHLCV('BTC/ETH', '5m', 1516753800000).catch(expectExchangeError);
-    exchange.fetchOHLCV('BTC/ETH', '15m', 1516753800000).catch(expectExchangeError);
+    exchange.fetchOHLCV('BTC/ETH', '1m', 1516753800000).catch(expectExchangeError(NotSupported));
+    exchange.fetchOHLCV('BTC/ETH', '3m', 1516753800000).catch(expectExchangeError(NotSupported));
+    exchange.fetchOHLCV('BTC/ETH', '5m', 1516753800000).catch(expectExchangeError(NotSupported));
+    exchange.fetchOHLCV('BTC/ETH', '15m', 1516753800000).catch(expectExchangeError(NotSupported));
 });
 
-// describe('createOrder', () => {
-//     test('should return an order', async () => {
-//         const exchange = getExchange();
-//         const order = await exchange.createOrder('BTC/ETH', 'market', 'buy', 1, 10);
-//     });
-// });
+describe('createOrder', () => {
+    test('should return an order', async () => {
+        const exchange = getExchange();
+        const dataProxy = exchange.getDataProxy();
+        const order = await exchange.createOrder('BTC/ETH', 'market', 'buy', 1);
+        expect(dataProxy.addOrder).toBeCalledWith(exchange.market('BTC/ETH'), 1, 'buy');
+        expect(order.amount).toEqual(1);
+        expect(order.side).toEqual('BUY');
+        expect(order.symbol).toEqual('BTC/ETH');
+    });
+
+    // TODO: move this to dataproxy tests
+    // test('should throw exception if now enough available to buy', async () => {
+    //     const exchange = getExchange();
+    //     // we can only buy 1 BTC
+    //     expect.assertions(1);
+    //     return exchange
+    //         .createOrder('BTC/ETH', 'market', 'buy', 2)
+    //         .catch(expectExchangeError(InsufficientFunds));
+    // });
+
+    // TODO: move this to dataproxy tests
+    // test('should call getBalance for ETH when buying BTC', async () => {
+    //     const exchange = getExchange();
+    //     const dataProxy = exchange.getDataProxy();
+    //     // when buying BTC/ETH you need enough ETH, check that getBalance is called for ETH
+    //     return exchange.createOrder('BTC/ETH', 'market', 'buy', 1).then(() => {
+    //         expect(dataProxy.getBalance).toBeCalledWith('ETH');
+    //     });
+    // });
+
+    // TODO: move this to dataproxy tests
+    // test('should call getBalance for BTC when selling ETH', async () => {
+    //     const exchange = getExchange();
+    //     const dataProxy = exchange.getDataProxy();
+    //     // when buying BTC/ETH you need enough ETH, check that getBalance is called for ETH
+    //     return exchange.createOrder('BTC/ETH', 'market', 'sell', 1).then(() => {
+    //         expect(dataProxy.getBalance).toBeCalledWith('BTC');
+    //     });
+    // });
+});

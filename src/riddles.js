@@ -356,65 +356,16 @@ module.exports = class riddles extends Exchange {
         return this.parseTrades(response, market, since, limit);
     }
 
-    parseOrderStatus(status) {
-        let statuses = {
-            NEW: 'open',
-            PARTIALLY_FILLED: 'open',
-            FILLED: 'closed',
-            CANCELED: 'canceled',
-        };
-        return status in statuses ? statuses[status] : status.toLowerCase();
-    }
-
-    parseOrder(order, market = undefined) {
-        let status = this.safeValue(order, 'status');
-        if (typeof status !== 'undefined') status = this.parseOrderStatus(status);
-        let symbol = this.findSymbol(this.safeString(order, 'symbol'), market);
-        let timestamp = undefined;
-        if ('time' in order) timestamp = order['time'];
-        else if ('transactTime' in order) timestamp = order['transactTime'];
-        else throw new ExchangeError(this.id + ' malformed order: ' + this.json(order));
-        let price = parseFloat(order['price']);
-        let amount = parseFloat(order['origQty']);
-        let filled = this.safeFloat(order, 'executedQty', 0.0);
-        let remaining = Math.max(amount - filled, 0.0);
-        let cost = undefined;
-        if (typeof price !== 'undefined') if (typeof filled !== 'undefined') cost = price * filled;
-        let result = {
-            info: order,
-            id: order['orderId'].toString(),
-            timestamp: timestamp,
-            datetime: this.iso8601(timestamp),
-            symbol: symbol,
-            type: order['type'].toLowerCase(),
-            side: order['side'].toLowerCase(),
-            price: price,
-            amount: amount,
-            cost: cost,
-            filled: filled,
-            remaining: remaining,
-            status: status,
-            fee: undefined,
-        };
-        return result;
-    }
-
     async createOrder(symbol, type, side, amount, price = undefined, params = {}) {
         await this.loadMarkets();
         let market = this.market(symbol);
-        let order = {
-            symbol: market['id'],
-            quantity: this.amountToString(symbol, amount),
-            type: type.toUpperCase(),
-            side: side.toUpperCase(),
-        };
-        if (type === 'limit') {
-            throw new NotSupported('limit orders are not supported');
+        if (type !== 'market') {
+            throw new NotSupported(`${type} orders are not supported`);
         }
-        let response = this.dataProxy.addOrder(order);
-        return this.parseOrder(response);
+        return this.dataProxy.addOrder(market, amount, side);
     }
 
+    // remove this when this exchange implementation is done and is verified that this is not used anywhere
     handleErrors(code, reason, url, method, headers, body) {
         throw new ExchangeError(
             this.id +

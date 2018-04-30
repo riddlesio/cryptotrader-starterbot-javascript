@@ -2,6 +2,21 @@
 
 const mock = jest.fn().mockImplementation(() => {
     return {
+        addOrder: jest.fn(() => ({
+            time: 1525093039737,
+            orderId: 1,
+            type: 'market',
+            side: 'BUY',
+            price: undefined, // TODO: in implementation use current price
+            amount: 1,
+            cost: 1 * 10,
+            filled: 1,
+            remaining: 0, // amount - filled
+            status: 'open',
+            symbol: 'BTC/ETH',
+            fee: undefined,
+        })),
+        getBalance: jest.fn(() => 12),
         getStacks: jest.fn(() => ({ BTC: 100, ETH: 10 })),
         getMarkets: jest.fn(() => [
             {
