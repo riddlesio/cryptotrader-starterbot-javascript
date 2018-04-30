@@ -1,6 +1,5 @@
 const utils = require('./utils');
 
-
 module.exports = class CommandDelegator {
     constructor(bot, dataProxy) {
         this.bot = bot;
@@ -117,33 +116,19 @@ module.exports = class CommandDelegator {
     }
 
     updateChart(data) {
-        return;
         const chartStrings = data.split(';');
-        let dateUpdated = false;
-
         for (const candleString of chartStrings) {
-            let candle = new Candle(this.bot.gameSettings.candle_format, candleString);
-            if (!this.state.charts.hasOwnProperty(candle.pair)) {
-                this.state.charts[candle.pair] = new Chart();
-            }
-            this.state.charts[candle.pair].addCandle(candle);
-
-            if (!dateUpdated) {
-                this.state.date = candle.date;
-                dateUpdated = true;
-            }
+            // TODO: get/set candle_format
+            this.dataProxy.addCandleByString(candleString);
         }
     }
 
     updateStacks(data) {
-        return;
         const stackStrings = data.split(',');
+        this.dataProxy.clearStacks();
         for (const stackString of stackStrings) {
             const parts = stackString.split(':');
-            if (!this.state.stacks.hasOwnProperty(parts[0])) {
-                this.state.stacks[parts[0]] = {};
-            }
-            this.state.stacks[parts[0]] = Number.parseFloat(parts[1]);
+            this.dataProxy.updateStack(parts[0], Number.parseFloat(parts[1]));
         }
     }
 };

@@ -8,10 +8,15 @@ module.exports = class ExchangeDataProxy {
         this.markets = [];
         this.candles = {};
         this.lastDate = undefined;
+        this.candleIndexToKey = [];
     }
 
-    updateStack(stacks) {
-        this.stacks = stacks;
+    clearStacks() {
+        this.stacks = {};
+    }
+
+    updateStack(marketId, stack) {
+        this.stacks[marketId] = stack;
     }
 
     getStacks() {
@@ -36,12 +41,49 @@ module.exports = class ExchangeDataProxy {
         return this.markets;
     }
 
-    addCandle(candle) {
-        this.candles.push(candle);
+    addCandleByString(multiCandleString) {
+        for (let candleString of multiCandleString.split(';')) {
+            let candleDataIndexed = candleString.split(',');
+            const candleData = {};
+            for (let index in candleDataIndexed) {
+                let key = this.candleIndexToKey[index];
+                candleData[key] = this.formatCandleValue(key, candleDataIndexed[index]);
+            }
+            // TODO: mult timestamp *1000, rest to float
+            this.addCandle(candleData);
+        }
+    }
+
+    formatCandleValue(key, value) {
+        switch (key) {
+            case 'date':
+                return value * 1000;
+            case 'high':
+            case 'low':
+            case 'open':
+            case 'close':
+            case 'volume':
+                return Number.parseFloat(value);
+            default:
+                return value;
+        }
+    }
+
+    addCandle(candleData) {
+        const marketId = candleData.pair;
+        delete candleData.pair;
+        if (!(marketId in this.candles)) {
+            this.candles[marketId] = [];
+        }
+        this.candles[marketId].push(candleData);
     }
 
     getCandles() {
         return this.candles;
+    }
+
+    setCandleFormat(formatString) {
+        this.candleIndexToKey = formatString.split(',');
     }
 
     addOrder(market, amount, side) {
