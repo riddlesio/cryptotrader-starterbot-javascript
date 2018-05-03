@@ -1,7 +1,9 @@
 const ExchangeDataProxy = require('./ExchangeDataProxy');
+const { NotSupported, InsufficientFunds } = require('ccxt');
 
 test('update stacks', () => {
     const proxy = new ExchangeDataProxy();
+    proxy.updateStack('BTC:0.00000000,ETH:0.00000000,USDT:1000.00');
 });
 
 test('update candles', () => {
@@ -41,5 +43,40 @@ test('update candles', () => {
                 volume: 1618333.6451304,
             },
         ],
+    });
+});
+
+test('should throw exception if now enough available to buy', async () => {
+    const proxy = new ExchangeDataProxy();
+    proxy.addCandleByString(
+        'BTC_ETH,1516753800,0.090995,0.09040017,0.09060023,0.09069601,39.15071531;USDT_ETH,1516753800,976.99644142,955.99999998,974.87665079,960.00160798,316622.92602686;USDT_BTC,1516753800,10806.92999962,10501,10748.4213653,10575.00000019,1618333.6451304'
+    );
+    proxy.addMarket('BTC_ETH');
+    proxy.getBalance = jest.fn();
+    proxy.getBalance.mockReturnValue('0');
+    // we can only buy 1 BTC
+    let market = {
+        id: 'BTC_ETH',
+        base: 'BTC',
+        quote: 'ETH',
+    };
+    expect(proxy.addOrder(market, 2, 'buy')).toThrow(InsufficientFunds);
+});
+
+test('should call getBalance for ETH when buying BTC', async () => {
+    const exchange = getExchange();
+    const dataProxy = exchange.getDataProxy();
+    // when buying BTC/ETH you need enough ETH, check that getBalance is called for ETH
+    return exchange.createOrder('BTC/ETH', 'market', 'buy', 1).then(() => {
+        expect(dataProxy.getBalance).toBeCalledWith('ETH');
+    });
+});
+
+test('should call getBalance for BTC when selling ETH', async () => {
+    const exchange = getExchange();
+    const dataProxy = exchange.getDataProxy();
+    // when buying BTC/ETH you need enough ETH, check that getBalance is called for ETH
+    return exchange.createOrder('BTC/ETH', 'market', 'sell', 1).then(() => {
+        expect(dataProxy.getBalance).toBeCalledWith('BTC');
     });
 });

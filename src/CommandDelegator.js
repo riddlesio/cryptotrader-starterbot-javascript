@@ -67,7 +67,7 @@ module.exports = class CommandDelegator {
         // set key to value
         switch (key) {
             case 'candle_format':
-                this.bot.gameSettings.candle_format = value.split(',');
+                this.dataProxy.setCandleFormat(value);
                 break;
             case 'timebank':
             case 'time_per_move':
@@ -105,30 +105,13 @@ module.exports = class CommandDelegator {
     updateGame(data) {
         switch (data[0]) {
             case 'next_candles':
-                this.updateChart(data[1]);
+                this.dataProxy.addCandleByString(data[1]);
                 break;
             case 'stacks':
-                this.updateStacks(data[1]);
+                this.dataProxy.updateStacks(data[1]);
                 break;
             default:
                 console.error(`Cannot parse game data input with key ${data[0]}`);
-        }
-    }
-
-    updateChart(data) {
-        const chartStrings = data.split(';');
-        for (const candleString of chartStrings) {
-            // TODO: get/set candle_format
-            this.dataProxy.addCandleByString(candleString);
-        }
-    }
-
-    updateStacks(data) {
-        const stackStrings = data.split(',');
-        this.dataProxy.clearStacks();
-        for (const stackString of stackStrings) {
-            const parts = stackString.split(':');
-            this.dataProxy.updateStack(parts[0], Number.parseFloat(parts[1]));
         }
     }
 };

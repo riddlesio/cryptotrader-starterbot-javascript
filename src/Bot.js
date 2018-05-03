@@ -8,7 +8,6 @@
  * @License MIT License (http://opensource.org/Licenses/MIT)
  */
 const readline = require('readline');
-const utils = require('./utils');
 
 module.exports = class Bot {
     constructor(exchange) {

@@ -8,11 +8,20 @@ module.exports = class ExchangeDataProxy {
         this.markets = [];
         this.candles = {};
         this.lastDate = undefined;
-        this.candleIndexToKey = [];
+        this.candleIndexToKey = ['pair', 'date', 'high', 'low', 'open', 'close', 'volume'];
     }
 
     clearStacks() {
         this.stacks = {};
+    }
+
+    updateStacks(stacksString) {
+        const stackStrings = stacksString.split(',');
+        this.clearStacks();
+        for (const stackString of stackStrings) {
+            const parts = stackString.split(':');
+            this.updateStack(parts[0], Number.parseFloat(parts[1]));
+        }
     }
 
     updateStack(marketId, stack) {
@@ -76,6 +85,7 @@ module.exports = class ExchangeDataProxy {
             this.candles[marketId] = [];
         }
         this.candles[marketId].push(candleData);
+        this.setLastDate(candleData.date);
     }
 
     getCandles() {
@@ -89,15 +99,16 @@ module.exports = class ExchangeDataProxy {
     addOrder(market, amount, side) {
         let requiredBalanceCurrency = side == 'buy' ? market.quote : market.base;
         let sourceBalanceCurrency = side == 'sell' ? market.quote : market.base;
-
-        let tickerClosePrice = this.candles[this.candles[market.id].length - 1];
-
+        let candlesForMarket = this.candles[market.id];
+        let tickerClosePrice = candlesForMarket[candlesForMarket.length - 1].close;
         let priceFactor = side == 'buy' ? tickerClosePrice : 1 / tickerClosePrice;
-        let balance = this.dataProxy.getBalance(requiredBalanceCurrency);
+        let balance = this.getBalance(requiredBalanceCurrency);
         let requiredAmount = amount * priceFactor;
         if (balance < requiredAmount) {
             throw new InsufficientFunds(
-                `not enough: you want to ${side} ${amount} ${sourceBalanceCurrency} requiring ${requiredAmount} ${requiredBalanceCurrency} on ${symbol} but you have only ${balance} ${requiredBalanceCurrency}`
+                `not enough: you want to ${side} ${amount} ${sourceBalanceCurrency} requiring ${requiredAmount} ${requiredBalanceCurrency} on ${
+                    market.id
+                } but you have only ${balance} ${requiredBalanceCurrency}`
             );
         }
 
@@ -128,5 +139,9 @@ module.exports = class ExchangeDataProxy {
 
     getLastDate() {
         return this.lastDate;
+    }
+
+    setLastDate(date) {
+        this.lastDate = date;
     }
 };
