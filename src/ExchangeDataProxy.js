@@ -1,3 +1,5 @@
+'strict';
+
 const { InsufficientFunds } = require('ccxt');
 
 module.exports = class ExchangeDataProxy {
@@ -99,6 +101,9 @@ module.exports = class ExchangeDataProxy {
     addOrder(market, amount, side) {
         let requiredBalanceCurrency = side == 'buy' ? market.quote : market.base;
         let sourceBalanceCurrency = side == 'sell' ? market.quote : market.base;
+        if (typeof market.id === 'undefined') {
+            throw new Error('market.id is undefined');
+        }
         let candlesForMarket = this.candles[market.id];
         let tickerClosePrice = candlesForMarket[candlesForMarket.length - 1].close;
         let priceFactor = side == 'buy' ? tickerClosePrice : 1 / tickerClosePrice;

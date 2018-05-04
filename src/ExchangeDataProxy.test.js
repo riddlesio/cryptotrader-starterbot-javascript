@@ -46,12 +46,17 @@ test('update candles', () => {
     });
 });
 
-test('should throw exception if now enough available to buy', async () => {
+function getDataProxy() {
     const proxy = new ExchangeDataProxy();
     proxy.addCandleByString(
         'BTC_ETH,1516753800,0.090995,0.09040017,0.09060023,0.09069601,39.15071531;USDT_ETH,1516753800,976.99644142,955.99999998,974.87665079,960.00160798,316622.92602686;USDT_BTC,1516753800,10806.92999962,10501,10748.4213653,10575.00000019,1618333.6451304'
     );
     proxy.addMarket('BTC_ETH');
+    return proxy;
+}
+
+test('should throw exception if now enough available to buy', async () => {
+    const proxy = getDataProxy();
     proxy.getBalance = jest.fn();
     proxy.getBalance.mockReturnValue('0');
     // we can only buy 1 BTC
@@ -60,23 +65,32 @@ test('should throw exception if now enough available to buy', async () => {
         base: 'BTC',
         quote: 'ETH',
     };
-    expect(proxy.addOrder(market, 2, 'buy')).toThrow(InsufficientFunds);
+    expect(() => {
+        proxy.addOrder(market, 2, 'buy');
+    }).toThrow(InsufficientFunds);
 });
 
 test('should call getBalance for ETH when buying BTC', async () => {
-    const exchange = getExchange();
-    const dataProxy = exchange.getDataProxy();
+    const proxy = getDataProxy();
+    proxy.getBalance = jest.fn();
+    let market = {
+        id: 'BTC_ETH',
+        base: 'BTC',
+        quote: 'ETH',
+    };
     // when buying BTC/ETH you need enough ETH, check that getBalance is called for ETH
-    return exchange.createOrder('BTC/ETH', 'market', 'buy', 1).then(() => {
-        expect(dataProxy.getBalance).toBeCalledWith('ETH');
-    });
+    proxy.addOrder(market, 'market', 'buy', 1);
+    expect(proxy.getBalance).toBeCalledWith('ETH');
 });
 
 test('should call getBalance for BTC when selling ETH', async () => {
-    const exchange = getExchange();
-    const dataProxy = exchange.getDataProxy();
-    // when buying BTC/ETH you need enough ETH, check that getBalance is called for ETH
-    return exchange.createOrder('BTC/ETH', 'market', 'sell', 1).then(() => {
-        expect(dataProxy.getBalance).toBeCalledWith('BTC');
-    });
+    const proxy = getDataProxy();
+    proxy.getBalance = jest.fn();
+    let market = {
+        id: 'BTC_ETH',
+        base: 'BTC',
+        quote: 'ETH',
+    };
+    proxy.addOrder(market, 'market', 'sell', 1);
+    expect(proxy.getBalance).toBeCalledWith('BTC');
 });
