@@ -59,7 +59,8 @@ module.exports = class CommandDelegator {
         if (data[0] === 'order') {
             // this.state.timebank = parseInt(data[1], 10);
             const timebank = parseInt(data[1], 10);
-            return this.bot.step(timebank);
+            this.bot.step(timebank);
+            this.dataProxy.flushOrders();
         }
     }
 

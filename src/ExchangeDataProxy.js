@@ -145,6 +145,10 @@ module.exports = class ExchangeDataProxy {
         };
     }
 
+    flushOrders() {
+        // TODO: print orders to stdout
+    }
+
     getLastDate() {
         return this.lastDate;
     }
