@@ -60,7 +60,6 @@ module.exports = class ExchangeDataProxy {
                 let key = this.candleIndexToKey[index];
                 candleData[key] = this.formatCandleValue(key, candleDataIndexed[index]);
             }
-            // TODO: mult timestamp *1000, rest to float
             this.addCandle(candleData);
         }
     }
