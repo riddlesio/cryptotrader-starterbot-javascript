@@ -1,3 +1,11 @@
+/**
+ * This file is part of the Crypto Trader JavaScript starter bot
+ *
+ * @author Dino Hensen <dino@riddles.io>
+ * @License MIT License (http://opensource.org/Licenses/MIT)
+ */
+'use strict';
+
 const { NotSupported, InsufficientFunds } = require('ccxt');
 
 const ccxt = require('./ccxt');
