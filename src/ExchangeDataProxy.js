@@ -115,28 +115,26 @@ module.exports = class ExchangeDataProxy {
                 } but you have only ${balance} ${requiredBalanceCurrency}`
             );
         }
-
-        this.stacks[market.id] -= amount;
+        this.stacks[requiredBalanceCurrency] -= amount;
+        // the currency that is gained from a buy or a sell is added to stack in the next round of the game
         this.orders.push({
             side: side,
             marketId: market.id,
             amount: amount,
         });
-        let price = undefined;
-
         this.orderCount++;
         return {
             time: this.getLastDate(),
             orderId: this.orderCount,
             type: 'market',
             side: side,
-            price: price,
+            price: tickerClosePrice,
             amount: amount,
             cost: undefined,
             filled: amount,
             remaining: 0, // amount - filled
             status: 'open',
-            symbol: 'BTC/ETH',
+            symbol: market.symbol,
             fee: undefined,
         };
     }
