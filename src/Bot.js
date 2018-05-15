@@ -24,7 +24,15 @@ module.exports = class Bot {
         };
     }
 
-    step(timebank) {
-        
+    async step(timebank) {
+        // loading markets is not necessary
+        await this.exchange.createOrder('BTC/USDT', 'market', 'buy', 0.03);
+        return this.exchange.createOrder('BTC/USDT', 'market', 'buy', 0.06);
+        // be sure to either await or return the createOrder, else the order will not be flushed in time
+    }
+
+    async stepErrorHandler(err) {
+        // implement your error handler
+        console.error(err);
     }
 };

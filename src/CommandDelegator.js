@@ -55,12 +55,16 @@ module.exports = class CommandDelegator {
      * @param {Array} data
      * @returns {String | null}
      */
-    action(data) {
+    async action(data) {
         if (data[0] === 'order') {
             // this.state.timebank = parseInt(data[1], 10);
             const timebank = parseInt(data[1], 10);
-            this.bot.step(timebank);
-            this.dataProxy.flushOrders();
+            await this.bot
+                .step(timebank)
+                .catch(this.bot.stepErrorHandler)
+                .then(() => {
+                    this.dataProxy.flushOrders();
+                });
         }
     }
 
@@ -114,7 +118,7 @@ module.exports = class CommandDelegator {
     updateGame(data) {
         switch (data[0]) {
             case 'next_candles':
-                this.dataProxy.addCandleByString(data[1]);
+                this.dataProxy.addCandleByString(data[1], this.dataProxy.getMarkets().length == 0);
                 break;
             case 'stacks':
                 this.dataProxy.updateStacks(data[1]);

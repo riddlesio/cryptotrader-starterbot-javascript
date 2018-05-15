@@ -67,13 +67,16 @@ module.exports = class ExchangeDataProxy {
         return this.markets;
     }
 
-    addCandleByString(multiCandleString) {
+    addCandleByString(multiCandleString, initializeMarkets) {
         for (let candleString of multiCandleString.split(';')) {
             let candleDataIndexed = candleString.split(',');
             const candleData = {};
             for (let index in candleDataIndexed) {
                 let key = this.candleIndexToKey[index];
                 candleData[key] = this.formatCandleValue(key, candleDataIndexed[index]);
+            }
+            if (initializeMarkets === true) {
+                this.addMarket(candleData.pair);
             }
             this.addCandle(candleData);
         }
@@ -130,9 +133,9 @@ module.exports = class ExchangeDataProxy {
         if (balance < requiredAmount) {
             throw new InsufficientFunds(
                 `not enough: you want to ${side} ${amount} ${
-                    market.base
+                market.base
                 } requiring ${requiredAmount} ${requiredBalanceCurrency} on ${
-                    market.id
+                market.id
                 } but you have only ${balance} ${requiredBalanceCurrency}`
             );
         }

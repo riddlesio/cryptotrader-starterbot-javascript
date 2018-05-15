@@ -20,6 +20,9 @@ fi
 smoke_test_input() {
     TEST_INPUT_FILE="$1"
     cat $TEST_INPUT_FILE | node main.js > /dev/null
+    # cat $TEST_INPUT_FILE | node main.js
+
+    echo -e "\n"
     if [[ $? -eq 0 ]]; then
         echo "Smoke test ${green}${bold}OK${normal} for $TEST_INPUT_FILE"
     else
