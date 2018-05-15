@@ -29,9 +29,15 @@ const ohlcv = exchange => {
 };
 
 (async () => {
-    await exchange.loadMarkets();
+    let markets = await exchange.loadMarkets();
 
-    ohlcv(exchange);
+    for (let market in markets) {
+        if (market.indexOf('ETH') != -1) {
+            console.log(market);
+        }
+    };
+
+    // ohlcv(exchange);
 
     // exchange.fetchTicker('ETH/BTC').then(res => {
     //     delete res.info;

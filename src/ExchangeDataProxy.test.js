@@ -8,6 +8,7 @@
 
 const ExchangeDataProxy = require('./ExchangeDataProxy');
 const { NotSupported, InsufficientFunds } = require('ccxt');
+const { Writable } = require('stream');
 
 describe('updateStacks', () => {
     test('update stacks', () => {
@@ -67,6 +68,29 @@ describe('addCandleByString', () => {
     });
 });
 
+describe('should properly initialize market quote and base', () => {
+    test('BTC_ETH market should have ETH as base', () => {
+        const proxy = new ExchangeDataProxy();
+        proxy.addMarket('BTC_ETH');
+        expect(proxy.markets[0].baseAsset).toEqual('ETH');
+        expect(proxy.markets[0].quoteAsset).toEqual('BTC');
+    });
+
+    test('USDT_BTC market should have BTC as base', () => {
+        const proxy = new ExchangeDataProxy();
+        proxy.addMarket('USDT_BTC');
+        expect(proxy.markets[0].baseAsset).toEqual('BTC');
+        expect(proxy.markets[0].quoteAsset).toEqual('USDT');
+    });
+
+    test('USDT_ETH market should have ETH as base', () => {
+        const proxy = new ExchangeDataProxy();
+        proxy.addMarket('USDT_ETH');
+        expect(proxy.markets[0].baseAsset).toEqual('ETH');
+        expect(proxy.markets[0].quoteAsset).toEqual('USDT');
+    });
+});
+
 function getDataProxy() {
     const proxy = new ExchangeDataProxy();
     proxy.addCandleByString(
@@ -87,27 +111,27 @@ describe('addOrder', () => {
         // we can only buy 1 BTC
         let market = {
             id: 'BTC_ETH',
-            base: 'BTC',
-            quote: 'ETH',
-            symbol: 'BTC/ETH',
+            base: 'ETH',
+            quote: 'BTC',
+            symbol: 'ETH/BTC',
         };
         expect(() => {
             proxy.addOrder(market, 2, 'buy');
         }).toThrow(InsufficientFunds);
     });
 
-    test('should call getBalance for ETH when buying BTC', async () => {
+    test('should call getBalance for BTC when buying ETH', async () => {
         const proxy = getDataProxy();
         proxy.getBalance = jest.fn();
         let market = {
             id: 'BTC_ETH',
-            base: 'BTC',
-            quote: 'ETH',
-            symbol: 'BTC/ETH',
+            base: 'ETH',
+            quote: 'BTC',
+            symbol: 'ETH/BTC',
         };
-        // when buying BTC/ETH you need enough ETH, check that getBalance is called for ETH
+        // when buying ETH/BTC you need enough ETH, check that getBalance is called for ETH
         proxy.addOrder(market, 1, 'buy');
-        expect(proxy.getBalance).toBeCalledWith('ETH');
+        expect(proxy.getBalance).toBeCalledWith('BTC');
     });
 
     test('should call getBalance for BTC when selling ETH', async () => {
@@ -115,27 +139,65 @@ describe('addOrder', () => {
         proxy.getBalance = jest.fn();
         let market = {
             id: 'BTC_ETH',
-            base: 'BTC',
-            quote: 'ETH',
-            symbol: 'BTC/ETH',
+            base: 'ETH',
+            quote: 'BTC',
+            symbol: 'ETH/BTC',
         };
         proxy.addOrder(market, 1, 'sell');
-        expect(proxy.getBalance).toBeCalledWith('BTC');
+        expect(proxy.getBalance).toBeCalledWith('ETH');
     });
 
     test('should not be able to buy again after you ran out of currency', async () => {
         const proxy = getDataProxy();
         let market = {
             id: 'USDT_BTC',
-            base: 'USDT',
-            quote: 'BTC',
-            symbol: 'USDT/BTC',
+            base: 'BTC',
+            quote: 'USDT',
+            symbol: 'BTC/USDT',
         };
         expect(proxy.getBalance('USDT')).toEqual(1000);
-        proxy.addOrder(market, 1000, 'sell');
-        expect(proxy.getBalance('USDT')).toEqual(0);
+        proxy.addOrder(market, 0.09, 'buy');
+        expect(proxy.getBalance('USDT')).toBeCloseTo(48.25, 2);
         expect(() => {
             proxy.addOrder(market, 1000, 'sell');
         }).toThrow(InsufficientFunds);
+    });
+
+    test('should not be able to sell this much BTC if you dont have it', () => {
+        const proxy = getDataProxy();
+        let market = {
+            id: 'USDT_BTC',
+            base: 'BTC',
+            quote: 'USDT',
+            symbol: 'BTC/USDT',
+        };
+        expect(proxy.getBalance('BTC')).toEqual(0);
+        expect(() => {
+            proxy.addOrder(market, 1, 'sell');
+        }).toThrow(InsufficientFunds);
+    });
+});
+
+describe('flush orders', () => {
+    test('should print orders to a stream', () => {
+        const proxy = getDataProxy();
+        let orders = [
+            { side: 'sell', marketId: 'USDT_BTC', amount: 333 },
+            { side: 'buy', marketId: 'BTC_ETH', amount: 333 },
+            { side: 'sell', marketId: 'USDT_ETH', amount: 333 },
+        ];
+        proxy.getOrders = jest.fn();
+        proxy.getOrders.mockReturnValue(orders);
+        var output = '';
+        let someStream = new Writable({
+            write(chunk, encoding, callback) {
+                output += chunk.toString();
+                callback();
+            },
+        });
+        proxy.setOutputStream(someStream);
+        proxy.flushOrders(() => {
+            expect(output).toEqual('sell USDT_BTC 333;buy BTC_ETH 333;sell USDT_ETH 333');
+        });
     });
 });

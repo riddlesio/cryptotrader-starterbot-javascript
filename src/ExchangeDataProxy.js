@@ -17,6 +17,14 @@ module.exports = class ExchangeDataProxy {
         this.candles = {};
         this.lastDate = undefined;
         this.candleIndexToKey = ['pair', 'date', 'high', 'low', 'open', 'close', 'volume'];
+        this.outputStream = process.stdout;
+    }
+
+    setOutputStream(stream) {
+        this.outputStream = stream;
+        this.outputStream.on('error', err => {
+            console.error(err.toString('utf8'));
+        });
     }
 
     clearStacks() {
@@ -45,7 +53,7 @@ module.exports = class ExchangeDataProxy {
     }
 
     addMarket(marketId) {
-        const [base, quote] = marketId.split('_');
+        const [quote, base] = marketId.split('_');
         const market = {
             symbol: marketId,
             baseAsset: base,
@@ -105,7 +113,6 @@ module.exports = class ExchangeDataProxy {
 
     addOrder(market, amount, side) {
         let requiredBalanceCurrency = side == 'buy' ? market.quote : market.base;
-        let sourceBalanceCurrency = side == 'sell' ? market.quote : market.base;
         if (typeof market.id === 'undefined') {
             throw new Error('market.id is undefined');
         }
@@ -113,15 +120,22 @@ module.exports = class ExchangeDataProxy {
         let tickerClosePrice = candlesForMarket[candlesForMarket.length - 1].close;
         let priceFactor = side == 'buy' ? tickerClosePrice : 1 / tickerClosePrice;
         let balance = this.getBalance(requiredBalanceCurrency);
-        let requiredAmount = amount * priceFactor;
+        // sell is easy: just check if you have the amount
+        let requiredAmount = amount;
+        // buy needs to convert the other currency with current price
+        if (side == 'buy') {
+            requiredAmount *= priceFactor;
+        }
         if (balance < requiredAmount) {
             throw new InsufficientFunds(
-                `not enough: you want to ${side} ${amount} ${sourceBalanceCurrency} requiring ${requiredAmount} ${requiredBalanceCurrency} on ${
+                `not enough: you want to ${side} ${amount} ${
+                    market.base
+                } requiring ${requiredAmount} ${requiredBalanceCurrency} on ${
                     market.id
                 } but you have only ${balance} ${requiredBalanceCurrency}`
             );
         }
-        this.stacks[requiredBalanceCurrency] -= amount;
+        this.stacks[requiredBalanceCurrency] -= requiredAmount;
         // the currency that is gained from a buy or a sell is added to stack in the next round of the game
         this.orders.push({
             side: side,
@@ -145,8 +159,20 @@ module.exports = class ExchangeDataProxy {
         };
     }
 
-    flushOrders() {
-        // TODO: print orders to stdout
+    getOrders() {
+        return this.orders;
+    }
+
+    flushOrders(cb) {
+        let command = 'pass';
+
+        if (this.getOrders().length > 0) {
+            command = this.getOrders()
+                .map(order => `${order.side} ${order.marketId} ${order.amount}`)
+                .join(';');
+        }
+
+        this.outputStream.write(command, null, cb);
     }
 
     getLastDate() {
