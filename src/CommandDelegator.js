@@ -80,6 +80,7 @@ module.exports = class CommandDelegator {
         // set key to value
         switch (key) {
             case 'candle_format':
+                this.bot.gameSettings[key] = value;
                 this.dataProxy.setCandleFormat(value);
                 break;
             case 'timebank':
