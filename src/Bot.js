@@ -25,6 +25,6 @@ module.exports = class Bot {
     }
 
     step(timebank) {
-        console.log('pass');
+        
     }
 };

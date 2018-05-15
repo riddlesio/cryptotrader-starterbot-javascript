@@ -55,7 +55,8 @@ module.exports = class ExchangeDataProxy {
     addMarket(marketId) {
         const [quote, base] = marketId.split('_');
         const market = {
-            symbol: marketId,
+            id: marketId,
+            symbol: `${base}/${quote}`,
             baseAsset: base,
             quoteAsset: quote,
         };
