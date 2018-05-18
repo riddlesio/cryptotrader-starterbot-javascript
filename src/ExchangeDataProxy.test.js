@@ -197,7 +197,28 @@ describe('flush orders', () => {
         });
         proxy.setOutputStream(someStream);
         proxy.flushOrders(() => {
-            expect(output).toEqual('sell USDT_BTC 333;buy BTC_ETH 333;sell USDT_ETH 333');
+            expect(output).toEqual('sell USDT_BTC 333;buy BTC_ETH 333;sell USDT_ETH 333\n');
+        });
+    });
+
+    test('can not have more than one order per pair', () => {
+        const proxy = getDataProxy();
+        let orders = [
+            { side: 'buy', marketId: 'USDT_BTC', amount: 10 },
+            { side: 'buy', marketId: 'USDT_BTC', amount: 10 },
+        ];
+        proxy.getOrders = jest.fn(() => orders);
+
+        var output = '';
+        let someStream = new Writable({
+            write(chunk, encoding, callback) {
+                output += chunk.toString();
+                callback();
+            },
+        });
+        proxy.setOutputStream(someStream);
+        proxy.flushOrders(() => {
+            expect(output).toEqual('buy USDT_BTC 20\n');
         });
     });
 });
