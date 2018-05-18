@@ -7,7 +7,7 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build": "rm dist/main.js && webpack && bin/build",
+    "build": "rm -f dist/main.js && webpack && bin/build",
     "smoke-test": "bin/smoke_test",
     "smoke-test-follow": "nodemon --exec bin/smoke_test",
     "test": "jest",
