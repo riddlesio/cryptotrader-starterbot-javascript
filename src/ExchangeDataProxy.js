@@ -133,9 +133,9 @@ module.exports = class ExchangeDataProxy {
         if (balance < requiredAmount) {
             throw new InsufficientFunds(
                 `not enough: you want to ${side} ${amount} ${
-                    market.base
+                market.base
                 } requiring ${requiredAmount} ${requiredBalanceCurrency} on ${
-                    market.id
+                market.id
                 } but you have only ${balance} ${requiredBalanceCurrency}`
             );
         }
@@ -170,9 +170,21 @@ module.exports = class ExchangeDataProxy {
     flushOrders(cb) {
         let command = 'pass';
 
+        let collapsedOrders = {};
+        for (let order of this.getOrders()) {
+            if (order.marketId in collapsedOrders) {
+                collapsedOrders[order.marketId].amount += order.amount;
+            } else {
+                collapsedOrders[order.marketId] = order;
+            }
+        }
+
         if (this.getOrders().length > 0) {
-            command = this.getOrders()
-                .map(order => `${order.side} ${order.marketId} ${order.amount}`)
+            command = Object.keys(collapsedOrders)
+                .map((key, _) => {
+                    const order = collapsedOrders[key];
+                    return `${order.side} ${order.marketId} ${order.amount}`;
+                })
                 .join(';');
         }
 
