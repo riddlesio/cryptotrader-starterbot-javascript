@@ -221,4 +221,23 @@ describe('flush orders', () => {
             expect(output).toEqual('buy USDT_BTC 20\n');
         });
     });
+
+    test('orders are cleared between flushes', () => {
+        const proxy = getDataProxy();
+        proxy.orders = [{ side: 'buy', marketId: 'USDT_BTC', amount: 10 }];
+        var output = '';
+        let someStream = new Writable({
+            write(chunk, encoding, callback) {
+                output += chunk.toString();
+                callback();
+            },
+        });
+        proxy.setOutputStream(someStream);
+        // first call to flushOrders procudes line: buy USDT_BTC 10
+        proxy.flushOrders();
+        // second call to flushOrders produces line: pass
+        proxy.flushOrders(() => {
+            expect(output).toEqual('buy USDT_BTC 10\npass\n');
+        });
+    });
 });

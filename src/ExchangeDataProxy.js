@@ -167,6 +167,10 @@ module.exports = class ExchangeDataProxy {
         return this.orders;
     }
 
+    clearOrders() {
+        this.orders = [];
+    }
+
     flushOrders(cb) {
         let command = 'pass';
 
@@ -187,6 +191,8 @@ module.exports = class ExchangeDataProxy {
                 })
                 .join(';');
         }
+
+        this.clearOrders();
 
         this.outputStream.write(`${command}\n`, null, cb);
     }
