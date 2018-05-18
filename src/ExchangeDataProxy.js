@@ -17,7 +17,7 @@ module.exports = class ExchangeDataProxy {
         this.candles = {};
         this.lastDate = undefined;
         this.candleIndexToKey = ['pair', 'date', 'high', 'low', 'open', 'close', 'volume'];
-        this.outputStream = process.stdout;
+        this.setOutputStream(process.stdout);
     }
 
     setOutputStream(stream) {
@@ -133,9 +133,9 @@ module.exports = class ExchangeDataProxy {
         if (balance < requiredAmount) {
             throw new InsufficientFunds(
                 `not enough: you want to ${side} ${amount} ${
-                market.base
+                    market.base
                 } requiring ${requiredAmount} ${requiredBalanceCurrency} on ${
-                market.id
+                    market.id
                 } but you have only ${balance} ${requiredBalanceCurrency}`
             );
         }
@@ -176,7 +176,7 @@ module.exports = class ExchangeDataProxy {
                 .join(';');
         }
 
-        this.outputStream.write(command, null, cb);
+        this.outputStream.write(`${command}\n`, null, cb);
     }
 
     getLastDate() {
