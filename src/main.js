@@ -8,10 +8,10 @@
  */
 
 const readline = require('readline');
-const Bot = require('./src/Bot');
-const ExchangeDataProxy = require('./src/ExchangeDataProxy');
-const CommandDelegator = require('./src/CommandDelegator');
-const ccxt = require('./src/ccxt');
+const Bot = require('./Bot');
+const ExchangeDataProxy = require('./ExchangeDataProxy');
+const CommandDelegator = require('./CommandDelegator');
+const ccxt = require('./ccxt');
 const exchange = new ccxt.riddles();
 const bot = new Bot(exchange);
 const dataProxy = new ExchangeDataProxy();
